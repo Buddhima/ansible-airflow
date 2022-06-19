@@ -18,8 +18,8 @@
     - users
     - airflow_users
 
-- name: Airflow | Service
-  import_tasks: service.yml
-  tags:
-    - service
-    - airflow_service
+# - name: Airflow | Service
+#   import_tasks: service.yml
+#   tags:
+#     - service
+#     - airflow_service

@@ -103,19 +103,6 @@
   environment:
     SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
-- name: Airflow | Installing Airflow Extra Packages (prior to Ansible 2.7)
-  become: true
-  become_user: "{{ airflow_user }}"
-  pip:
-    name: "{{ airflow_package }}[{{ item }}]=={{ airflow_version }}"
-    virtualenv: "{{ airflow_app_home }}"
-    virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-  with_items: "{{ airflow_extra_packages }}"
-  when:
-    - airflow_extra_packages is defined
-    - not airflow_bundle_package
-    - ansible_version.full is version_compare('2.7', '<')
-
 - name: Airflow | Installing Airflow Extra Packages
   become: true
   become_user: "{{ airflow_user }}"
