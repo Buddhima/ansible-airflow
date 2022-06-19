@@ -56,7 +56,7 @@
 - name: Airflow | Initializing DB > 2.0
   command: "{{ airflow_executable }} db init"
   become: true
-  # become_user: "{{ airflow_user }}"
+  become_user: "{{ airflow_user }}"
   when:
     - airflow_version is version( '2.0.0', '>=')
     - airflow_install.changed or airflow_config.changed
