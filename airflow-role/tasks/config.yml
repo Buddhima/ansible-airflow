@@ -21,37 +21,37 @@
     group: root
   tags: airflow-gunicorn-logrotate
 
-- name: Airflow | Copy webserver_config.py file
-  template:
-    src: webserver_config.j2
-    dest: "{{ airflow_app_home }}/webserver_config.py"
-    owner: "{{ airflow_user }}"
-    group: "{{ airflow_group }}"
-    mode: 0644
-  register: airflow_config
-  when: airflow_version is version( '2.0.0', '>=')
-  # notify:
-  #   - restart airflow-webserver
-  #   - restart airflow-scheduler
-  #   - restart airflow-worker
-  #   - restart airflow-flower
-  tags: airflow-webserver-config-py
+# - name: Airflow | Copy webserver_config.py file
+#   template:
+#     src: webserver_config.j2
+#     dest: "{{ airflow_app_home }}/webserver_config.py"
+#     owner: "{{ airflow_user }}"
+#     group: "{{ airflow_group }}"
+#     mode: 0644
+#   register: airflow_config
+#   when: airflow_version is version( '2.0.0', '>=')
+#   # notify:
+#   #   - restart airflow-webserver
+#   #   - restart airflow-scheduler
+#   #   - restart airflow-worker
+#   #   - restart airflow-flower
+#   tags: airflow-webserver-config-py
 
-- name: Airflow | Copy basic airflow config file (>= 2.0)
-  template:
-    src: "{{ airflow_config_template_path_v2 }}"
-    dest: "{{ airflow_conf_path }}/airflow.cfg"
-    owner: "{{ airflow_user }}"
-    group: "{{ airflow_group }}"
-    mode: 0640
-  register: airflow_config
-  when: airflow_version is version( '2.0.0', '>=')
-  # notify:
-  #   - restart airflow-webserver
-  #   - restart airflow-scheduler
-  #   - restart airflow-worker
-  #   - restart airflow-flower
-  tags: airflow-cfg
+# - name: Airflow | Copy basic airflow config file (>= 2.0)
+#   template:
+#     src: "{{ airflow_config_template_path_v2 }}"
+#     dest: "{{ airflow_conf_path }}/airflow.cfg"
+#     owner: "{{ airflow_user }}"
+#     group: "{{ airflow_group }}"
+#     mode: 0640
+#   register: airflow_config
+#   when: airflow_version is version( '2.0.0', '>=')
+#   # notify:
+#   #   - restart airflow-webserver
+#   #   - restart airflow-scheduler
+#   #   - restart airflow-worker
+#   #   - restart airflow-flower
+#   tags: airflow-cfg
 
 - name: Airflow | Initializing DB > 2.0
   command: "{{ airflow_executable }} db init"
