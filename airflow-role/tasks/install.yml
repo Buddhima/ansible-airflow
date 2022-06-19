@@ -128,11 +128,11 @@
     extra_args: "{{ item.extra_args | default(omit) }}"
   with_items: "{{ dags_dependencies }}"
   when: dags_dependencies is defined
-  notify:
-    - restart airflow-webserver
-    - restart airflow-scheduler
-    - restart airflow-worker
-    - restart airflow-flower
+  # notify:
+  #   - restart airflow-webserver
+  #   - restart airflow-scheduler
+  #   - restart airflow-worker
+  #   - restart airflow-flower
 
 - name: Airflow | Copy Environment File
   template:
