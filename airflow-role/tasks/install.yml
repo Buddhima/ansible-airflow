@@ -50,7 +50,8 @@
 - name: Airflow | Set a virtualenv
   become: true
   become_user: "{{ airflow_user }}"
-  command: "virtualenv -p python{{ airflow_python_version | default(omit) }} {{ airflow_app_home }}"
+  # command: "virtualenv -p python{{ airflow_python_version | default(omit) }} {{ airflow_app_home }}"
+  command: "virtualenv -p python{{ airflow_python_version }} {{ airflow_app_home }}"
   when: not virtualenv_check.stat.exists
 
 - name: Airflow | Installing Python pip dependencies
