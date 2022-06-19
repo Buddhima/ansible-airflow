@@ -212,7 +212,7 @@ airflow_skeleton_paths:
 # Allowing playbooks to provide external config files&templates
 airflow_extra_conf_path: "{{ playbook_dir }}/files/airflow"
 airflow_extra_conf_template_path: "{{ playbook_dir }}/templates/airflow"
-airflow_config_template_path: airflow.cfg.j2
+# airflow_config_template_path: airflow.cfg.j2
 airflow_config_template_path_v2: airflow2.cfg.j2
 
 # DICT
