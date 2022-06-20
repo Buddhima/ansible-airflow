@@ -227,6 +227,7 @@ celery_version: 3.1.17
 # dags_dependencies:
 #   - {name: pip_package, version: version_needed}
 
+# Following environment variables will be copied to /etc/environment file
 airflow_environment_variables:
   - key: SCHEDULER_RUNS
     value: "{{ airflow_scheduler_runs }}"
@@ -235,4 +236,5 @@ airflow_environment_variables:
   - key: AIRFLOW_CONFIG
     value: "{{ airflow_conf_path }}/airflow.cfg"
 
+# Following is to add AIRFLOW_HOME/bin directory to PATH variable at /etc/environment file
 airflow_path_variable_addition: "{{ airflow_app_home }}/bin"
