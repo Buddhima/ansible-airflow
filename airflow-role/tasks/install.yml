@@ -29,24 +29,21 @@
 #     dest: "/etc/profile.d/airflow.sh"
 #     mode: 0644
 
-# - name: set environment for Airflow | Alternative Method
-#   become: true
-#   vars:
-#     os_environment:
-#       - key: SCHEDULER_RUNS
-#         value: "{{ airflow_scheduler_runs }}"
-#       - key: AIRFLOW_HOME
-#         value: "{{ airflow_app_home }}"
-#       - key: AIRFLOW_CONFIG
-#         value: "{{ airflow_conf_path }}/airflow.cfg"
-#   tasks:
+- name: 'Add {{ airflow_path_variable_addition }} to PATH'
+  lineinfile:
+    path: /etc/environment
+    regexp: 'PATH=(["])((?!.*?{{ airflow_path_variable_addition }}).*?)(["])$'
+    line: 'PATH=\1\2:{{ airflow_path_variable_addition }}\3'
+    backrefs: yes
+  when: lookup('file', '/etc/environment') is search('^\s*PATH\s*=')
+
 - name: customize /etc/environment
   ansible.builtin.lineinfile:
     dest: "/etc/environment"
     state: present
     regexp: "^{{ item.key }}="
     line: "{{ item.key }}={{ item.value }}"
-  with_items: "{{ os_environment }}"
+  with_items: "{{ airflow_environment_variables }}"
 
 - name: Airflow | Installing dependencies
   apt:
