@@ -23,11 +23,32 @@
     state: directory
   with_items: "{{ airflow_skeleton_paths }}"
 
-- name: Airflow | Copy profile.d file
-  template:
-    src: airflow-profile.d-file.j2
-    dest: "/etc/profile.d/airflow.sh"
-    mode: 0644
+# - name: Airflow | Copy profile.d file
+#   template:
+#     src: airflow-profile.d-file.j2
+#     dest: "/etc/profile.d/airflow.sh"
+#     mode: 0644
+
+- name: set environment for Airflow - Alternative Method
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    os_environment:
+      - key: SCHEDULER_RUNS
+        value: "{{ airflow_scheduler_runs }}"
+      - key: AIRFLOW_HOME
+        value: "{{ airflow_app_home }}"
+      - key: AIRFLOW_CONFIG
+        value: "{{ airflow_conf_path }}/airflow.cfg"
+  tasks:
+    - name: customize /etc/environment
+      ansible.builtin.lineinfile:
+        dest: "/etc/environment"
+        state: present
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      with_items: "{{ os_environment }}"
 
 - name: Airflow | Installing dependencies
   apt:
