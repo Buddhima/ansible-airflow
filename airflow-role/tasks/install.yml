@@ -23,11 +23,27 @@
     state: directory
   with_items: "{{ airflow_skeleton_paths }}"
 
-- name: Airflow | Copy profile.d file
-  template:
-    src: airflow-profile.d-file.j2
-    dest: "/etc/profile.d/airflow.sh"
-    mode: 0644
+# - name: Airflow | Copy profile.d file
+#   template:
+#     src: airflow-profile.d-file.j2
+#     dest: "/etc/profile.d/airflow.sh"
+#     mode: 0644
+
+- name: 'Add {{ airflow_path_variable_addition }} to PATH'
+  lineinfile:
+    path: /etc/environment
+    regexp: 'PATH=(["])((?!.*?{{ airflow_path_variable_addition }}).*?)(["])$'
+    line: 'PATH=\1\2:{{ airflow_path_variable_addition }}\3'
+    backrefs: yes
+  when: lookup('file', '/etc/environment') is search('^\s*PATH\s*=')
+
+- name: customize /etc/environment
+  ansible.builtin.lineinfile:
+    dest: "/etc/environment"
+    state: present
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_items: "{{ airflow_environment_variables }}"
 
 - name: Airflow | Installing dependencies
   apt:
