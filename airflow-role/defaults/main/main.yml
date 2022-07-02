@@ -12,7 +12,7 @@ airflow_createhome: yes
 
 # The default buster's python version, if you want other version you should make sure it is
 # installed before
-airflow_python_version: 3.10
+airflow_python_version: "3.10"
 
 # Because problems with some pip versions, we added this option to choose what version the role should install.
 # See https://airflow.apache.org/docs/apache-airflow/stable/installation.html#installation-tools
