@@ -1,0 +1,64 @@
+---
+# tasks file for compile and install Python on Linux
+
+# This task avoids downloading Python archive every time
+- name: Linux | Check if Python is present with the right version
+  command: "{{ python_path }}/bin/python{{ python_version[:3] }} --version"
+  register: command_result
+  ignore_errors: yes
+  changed_when: false
+  failed_when: false
+
+- name: Debian | Update apt cache
+  apt:
+    update_cache: yes
+  changed_when: false
+  when:
+    - ansible_os_family == "Debian"
+    - command_result.rc > 0
+
+- name: Archlinux | Update pacman cache
+  pacman:
+    update_cache: yes
+  changed_when: false
+  when:
+    - ansible_os_family == "Archlinux"
+    - command_result.rc > 0
+
+- name: Linux | Install Python dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ package_requirements }}"
+  when: command_result.rc > 0
+
+- name: Linux | Download and unpacking Python tarball
+  unarchive:
+    src: "{{ python_tarball_url }}"
+    dest: /tmp
+    mode: 0755
+    remote_src: yes
+  when: command_result.rc > 0
+
+- name: Linux | Configure Python source
+  shell: |
+    ./configure {{ enable_optimizations | ternary('--enable-optimizations --with-lto','') }} \
+    --with-system-ffi \
+    --with-ensurepip={{ ensure_pip }} \
+    --prefix={{ python_path }}
+  args:
+    chdir: "/tmp/Python-{{ python_version }}"
+  when: command_result.rc > 0
+
+- name: Linux | Compile and install Python
+  shell: "make PROFILE_TASK='-m test.regrtest --pgo -j{{ make_num_threads }}' -j{{ make_num_threads }} && make altinstall"
+  args:
+    chdir: "/tmp/Python-{{ python_version }}"
+  when: command_result.rc > 0
+
+- name: Linux | Clean dependency use for python compilation
+  package:
+    name: "{{ item }}"
+    state: absent
+  with_items: "{{ package_requirements }}"
+  when: clean_package_requirements

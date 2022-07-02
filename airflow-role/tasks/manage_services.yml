@@ -1,0 +1,41 @@
+---
+
+# Airflow services management
+
+- name: 'SERVICE | Manage environment file'
+  template:
+    src: "{{ airflow_service_envfile_template }}"
+    dest: "{{ airflow_service_envfile_path }}"
+    owner: "{{ airflow_paths.files.environment.owner | default('root') }}"
+    group: "{{ airflow_paths.files.environment.group | default('root') }}"
+    mode: "{{ airflow_paths.files.environment.mode | default('0644') }}"
+  notify:
+    - 'Restart airflow-webserver'
+    - 'Restart airflow-scheduler'
+    - 'Restart airflow-worker'
+
+
+- name: 'SERVICE | Manage systemd services'
+  template:
+    src: "templates/systemd.service.j2"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0644') }}"
+  notify: "{{ item.handler }}"
+  register: airflow_systemd_updated
+  with_items: "{{ airflow_services_systemd }}"
+
+- name: 'SERVICE | systemd daemon-reload'
+  systemd:
+    daemon_reload: true
+  when: "(airflow_systemd_updated.changed | bool)"
+
+
+# Services states
+- name: 'SERVICE | Manage airflow services states'
+  service:
+    name: "{{ item.name }}"
+    enabled: "{{ item.enabled | default(False) }}"
+    state: "{{ item.state }}"
+  with_items: "{{ airflow_services_states }}"

@@ -1,0 +1,84 @@
+---
+
+# Manage connections using Airflow CLI
+
+- name: 'CONFIG | CONNECTIONS | Get existing connections'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  shell: >
+    set -o pipefail && \
+      {{ airflow_virtualenv }}/bin/airflow connections list -o yaml | grep conn_id | cut -d ':' -f2 | sed 's/^\s*//' | sed 's/\s*$//'
+  changed_when: false
+  failed_when: false
+  no_log: true
+  register: 'airflow_existing_connections'
+  args:
+    executable: /bin/bash
+  tags:
+    - connections
+
+# Only add and delete actions are managed, not update
+- name: 'CONFIG | CONNECTIONS | Remove listed connections'
+  command: >
+    {{ airflow_virtualenv }}/bin/airflow connections delete {{ item.conn_id }}
+  changed_when: false
+  failed_when: false
+  no_log: true
+  with_items: "{{ airflow_connections }}"
+  when: 'item.conn_id in airflow_existing_connections.stdout_lines'
+  tags:
+    - connections
+
+- name: 'CONFIG | CONNECTIONS | Add connections using conn_uri'
+  command: >
+    {{ airflow_virtualenv }}/bin/airflow connections add \
+    {{ item.conn_id }} \
+    --conn-uri {{ item.conn_uri | default("") | quote }} \
+    --conn-extra '{{ item.conn_extra | default({}) | to_json }}'
+  changed_when: false
+  no_log: true
+  with_items: "{{ airflow_connections }}"
+  when: "(item.conn_uri | default('')) | length > 0"
+  tags:
+    - connections
+
+- name: 'CONFIG | CONNECTIONS | Add connections not using conn_uri without port'
+  command: >
+    {{ airflow_virtualenv }}/bin/airflow connections add \
+    {{ item.conn_id }} \
+    --conn-type {{ item.conn_type | default("") | quote }} \
+    --conn-host {{ item.conn_host | default("") | quote }} \
+    --conn-login {{ item.conn_login | default("") | quote }} \
+    --conn-password {{ item.conn_password | default("") | quote }} \
+    --conn-schema {{ item.conn_schema | default("") | quote }} \
+    --conn-extra '{{ item.conn_extra | default({}) | to_json }}'
+  changed_when: false
+  failed_when: false
+  no_log: true
+  with_items: "{{ airflow_connections }}"
+  when:
+    - "(item.conn_uri | default('')) | length == 0"
+    - "(item.conn_port | default(0)) | int == 0"
+  tags:
+    - connections
+
+- name: 'CONFIG | CONNECTIONS | Add connections not using conn_uri with port'
+  command: >
+    {{ airflow_virtualenv }}/bin/airflow connections add \
+    {{ item.conn_id }} \
+    --conn-type {{ item.conn_type | default("") | quote }} \
+    --conn-host {{ item.conn_host | default("") | quote }} \
+    --conn-login {{ item.conn_login | default("") | quote }} \
+    --conn-password {{ item.conn_password | default("") | quote }} \
+    --conn-schema {{ item.conn_schema | default("") | quote }} \
+    --conn-port {{ item.conn_port }} \
+    --conn-extra '{{ item.conn_extra | default({}) | to_json }}'
+  changed_when: false
+  failed_when: false
+  # no_log: true
+  with_items: "{{ airflow_connections }}"
+  when:
+    - "(item.conn_uri | default('')) | length == 0"
+    - "(item.conn_port | default(0)) | int > 0"
+  tags:
+    - connections

@@ -1,34 +1,88 @@
 ---
-# handlers file for airflow-role
 
-- name: restart airflow-webserver
-  systemd:
-    name: airflow-webserver
-    state: restarted
-  when: >-
-   airflow_services['airflow_webserver']
-   and airflow_services['airflow_webserver']['enabled']
+# Handlers main file for airflow role
 
-- name: restart airflow-scheduler
-  systemd:
-    name: airflow-scheduler
-    state: restarted
-  when: >-
-   airflow_services['airflow_scheduler']
-   and airflow_services['airflow_scheduler']['enabled']
+- name: 'Restart airflow'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when: "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'
 
-- name: restart airflow-worker
-  systemd:
-    name: airflow-worker
-    state: restarted
-  when: >-
-   airflow_services['airflow_worker']
-   and airflow_services['airflow_worker']['enabled']
 
-- name: restart airflow-flower
-  systemd:
-    name: airflow-flower
-    state: restarted
-  when: >-
-   airflow_services['airflow_flower']
-   and airflow_services['airflow_flower']['enabled']
+- name: 'Restart airflow-webserver'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when:
+    - "item.name == 'airflow-webserver'"
+    - "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'
+
+
+- name: 'Restart airflow-scheduler'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when:
+    - "item.name == 'airflow-scheduler'"
+    - "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'
+
+
+- name: 'Restart airflow-kerberos'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when:
+    - "item.name == 'airflow-kerberos'"
+    - "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'
+
+- name: 'Restart airflow-worker'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when:
+    - "item.name == 'airflow-worker'"
+    - "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'
+
+- name: 'Restart airflow-flower'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when:
+    - "item.name == 'airflow-flower'"
+    - "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'

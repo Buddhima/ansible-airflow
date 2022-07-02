@@ -1,0 +1,116 @@
+---
+
+# Airflow configuration tasks
+
+# Manage configuration templating
+- name: 'CONFIG | Manage configuration templating'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  template:
+    src: "{{ airflow_config_template }}"
+    dest: "{{ airflow_application_home }}/airflow.cfg"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_group }}"
+    mode: '0400'
+  notify: 'Restart airflow'
+
+
+# Manage logs folder
+- name: 'CONFIG | Manage log folder'
+  file:
+    path: "{{ airflow_log_path }}"
+    owner: "{{ airflow_log_owner }}"
+    group: "{{ airflow_log_group }}"
+    mode: "{{ airflow_log_mode }}"
+    state: 'directory'
+
+
+# Manage pid folder
+- name: 'CONFIG | Manage pid folder'
+  file:
+    path: "{{ airflow_pid_path }}"
+    owner: "{{ airflow_pid_owner }}"
+    group: "{{ airflow_pid_group }}"
+    mode: "{{ airflow_pid_mode }}"
+    state: 'directory'
+
+
+# Manage logrotate configuration
+- name: 'CONFIG | Manage logrotate configuration'
+  template:
+    src: "{{ airflow_logrotate_template }}"
+    dest: "{{ item.filename }}"
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  with_items: "{{ airflow_logrotate_config }}"
+
+
+# If airflow_*_config.webserver.authentication: True
+# copy over updated webserver config (overlays existing)
+- name: 'CONFIG | Generate Webserver Config'
+  template:
+    src: "templates/webserver_config.py"
+    dest: "{{ airflow_application_home ~ '/webserver_config.py' }}"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_group }}"
+    mode: '0400'
+  notify: 'Restart airflow'
+  when:
+    - "airflow_webserver_authenticate | bool"
+
+
+# Manage database initialize if first deployment
+- name: 'CONFIG | Manage database initialize'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  command: "{{ airflow_virtualenv }}/bin/airflow db init"
+  run_once: true
+  when:
+    - "not airflow_config_stat.stat.exists"
+    - "airflow_do_init_db | bool"
+
+
+# Set Sqlite backend permissions
+- name: 'CONFIG | Ensure SQLite backend file has good permissions'
+  file:
+    path: "{{ airflow_database_sqlite_file_path }}"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_group }}"
+    state: 'file'
+  when:
+    - "airflow_database_engine == 'sqlite'"
+
+
+# Manage database upgrade if not first deployment
+- name: 'CONFIG | Manage database upgrade'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  command: "{{ airflow_virtualenv }}/bin/airflow db upgrade"
+  run_once: true
+  when:
+    - "airflow_config_stat.stat.exists"
+    - "airflow_do_upgrade_db | bool"
+
+
+# If airflow_*_config.webserver.authentication: True
+# add airflow_admin users to airflow
+- name: 'CONFIG | Generate Airflow Webserver Admin Users'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  no_log: true
+  changed_when: false
+  failed_when: false
+  command: "{{ airflow_virtualenv }}/bin/airflow users create \
+            --role Admin \
+            --username {{ item.google_username }} \
+            --email {{ item.email }} \
+            --firstname {{ item.firstname }} \
+            --lastname {{ item.lastname }} \
+            --password {{ item.airflow_dummy_password }} "
+  when:
+    #- "airflow_webserver_authenticate | bool"
+    - "airflow_do_init_db | bool"
+  with_items: "{{ airflow_webserver_admins }}"
+  tags:
+    - "add_users"

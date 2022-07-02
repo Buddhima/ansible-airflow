@@ -1,0 +1,159 @@
+---
+
+# Airflow installation tasks
+
+# Manage system dependencies
+- name: 'INSTALL | Manage system dependencies'
+  package:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ airflow_system_dependencies }}"
+
+# Install Python
+- name: 'INSTALL | Base python'
+  include_role:
+    name: diodonfrost.python
+  tags:
+    - python
+
+- name: 'INSTALL | Add python3 symlink to python3.9'
+  ansible.builtin.file:
+    force: true
+    dest: "/usr/local/bin/python3"
+    src: "/usr/local/python3.9/bin/python3.9"
+    state: link
+
+- name: 'INSTALL | Add python symlink to python3.9'
+  ansible.builtin.file:
+    force: true
+    dest: "/usr/local/bin/python"
+    src: "/usr/local/python3.9/bin/python3.9"
+    state: link
+
+- name: 'INSTALL | Add pip symlink to pip3.9'
+  ansible.builtin.file:
+    force: true
+    dest: "/usr/local/bin/pip"
+    src: "/usr/local/python3.9/bin/pip3.9"
+    state: link
+
+# Create user
+- name: 'INSTALL | Manage airflow user creation'
+  user:
+    name: "{{ airflow_user_name }}"
+    createhome: true
+    home: "{{ airflow_user_home_path }}"
+    state: 'present'
+    shell: "{{ airflow_user_shell }}"
+
+# Check if configuration file exists
+# This has to happen before the install, because the install creates a default file in $AIRFLOW_HOME
+- name: 'INSTALL | Check if configuration file exists'
+  stat:
+    path: "{{ airflow_application_home }}/airflow.cfg"
+  register: 'airflow_config_stat'
+  changed_when: false
+
+- name: 'INSTALL | Manage permissions on user home directory'
+  file:
+    path: "{{ airflow_user_home_path }}"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_name }}"
+    mode: "{{ airflow_user_home_mode }}"
+    state: directory
+
+- name: 'INSTALL | Manage permissions on airflow home directory'
+  file:
+    path: "{{ airflow_application_home }}"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_name }}"
+    mode: "{{ airflow_config.core.airflow_home_mode }}"
+    state: directory
+
+- name: 'INSTALL | Manage permissions on airflow dags directory'
+  file:
+    path: "{{ airflow_config.core.dags_folder }}"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_name }}"
+    mode: "{{ airflow_config.core.dags_folder_mode }}"
+    state: directory
+
+# setup environment for all users, AIRFLOW_HOME, etc
+- name: 'INSTALL | Manage environment variables file'
+  template:
+    src: "{{ airflow_profiled_template }}"
+    dest: "/etc/profile.d/airflow.sh"
+    mode: 0644
+  when: airflow_provide_user_env
+
+# Install airflow packages
+- name: 'INSTALL | Manage airflow installation'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  pip:
+    name: "{{ item.name }}"
+    version: "{{ item.version | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+    virtualenv: "{{ airflow_virtualenv }}"
+    virtualenv_command: "/usr/local/bin/python3 -m venv"
+    extra_args: "{{ airflow_python_constraint }}"
+  changed_when: "airflow_pip_changed_when"
+  with_items: "{{ airflow_packages }}"
+  environment:
+    SLUGIFY_USES_TEXT_UNIDECODE: "yes"
+  when: (not airflow_pip_custom_version_install) or
+      (item.version is not defined) or
+      ( (not item.version is search('<') ) and (not item.version is search('>') ) )
+
+# Install dag dependency packages
+- name: 'INSTALL | Manage dag dependency installation'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  pip:
+    name: "{{ item.name }}"
+    version: "{{ item.version | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+    virtualenv: "{{ airflow_virtualenv }}"
+    virtualenv_command: "/usr/local/bin/python3 -m venv"
+  changed_when: "airflow_pip_changed_when"
+  with_items: "{{ dag_packages }}"
+  environment:
+    SLUGIFY_USES_TEXT_UNIDECODE: "yes"
+  when: (not airflow_pip_custom_version_install) or
+      (item.version is not defined) or
+      ( (not item.version is search('<') ) and (not item.version is search('>') ) )
+
+# Install airflow packages
+# Ansible's pip module doesn't currently support complex version strings
+# https://github.com/ansible/ansible/issues/19321
+- name: 'INSTALL | Manage airflow installation - complex pip versions'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  command: "{{ airflow_virtualenv }}/bin/pip install '{{ item.name }}{{ item.version }}' {{ airflow_python_constraint }}"
+  changed_when: "airflow_pip_changed_when"
+  with_items: "{{ airflow_packages }}"
+  when: (airflow_pip_custom_version_install) and
+        (item.version is defined) and
+      ( (item.version is search('<') ) or (item.version is search('>') ) )
+
+# Install airflow extra packages
+- name: 'INSTALL | Manage airflow extra packages installation'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  pip:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    virtualenv: "{{ airflow_virtualenv }}"
+    virtualenv_command: "/usr/local/bin/python3 -m venv"
+    extra_args: "{{ airflow_python_constraint }}"
+  changed_when: "airflow_pip_changed_when"
+  with_items: "{{ airflow_extra_packages }}"
+
+# Set permissions after the venv is created
+- name: 'INSTALL | Manage permissions on airflow venv directory'
+  file:
+    path: "{{ airflow_virtualenv }}"
+    owner: "{{ airflow_user_name }}"
+    group: "{{ airflow_user_name }}"
+    mode: "{{ airflow_virtualenv_mode }}"
+    state: directory

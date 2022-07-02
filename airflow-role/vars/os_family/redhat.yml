@@ -1,0 +1,15 @@
+---
+
+# RedHat CentOS 7 family specific vars
+
+_airflow_system_dependencies:
+ - name: 'postgresql-devel'
+ - name: 'openssl-devel'
+ - name: 'libffi-devel'
+ - name: 'libxml2'
+ - name: 'libxml2-devel'
+ - name: 'libxslt-devel'
+ - name: 'gcc'
+ # These are both necessary for the python venv setup
+ - name: 'virtualenv'
+ - name: 'python3-setuptools.noarch'
