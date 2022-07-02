@@ -67,7 +67,6 @@
   become: true
   become_user: "{{ airflow_user }}"
   command: "virtualenv -p python{{ airflow_python_version | default(omit) }} {{ airflow_app_home }}"
-  # command: "virtualenv -p python3.10 {{ airflow_app_home }}"
   when: not virtualenv_check.stat.exists
 
 - name: Airflow | Installing Python pip dependencies
@@ -78,7 +77,6 @@
     version: "{{ item.version | default(omit) }}"
     virtualenv: "{{ airflow_app_home }}"
     virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-    # virtualenv_python: "python3.10"
   with_items: "{{ airflow_required_python_packages }}"
   when: airflow_required_python_packages is defined
 
@@ -90,7 +88,6 @@
     version: "{{ celery_version }}"
     virtualenv: "{{ airflow_app_home }}"
     virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-    # virtualenv_python: "python3.10"
   when:
     - airflow_executor == "CeleryExecutor"
     - airflow_version is version( '2.0.0', '<')
@@ -103,7 +100,6 @@
     version: "{{ celery_version }}"
     virtualenv: "{{ airflow_app_home }}"
     virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-    # virtualenv_python: "python3.10"
   with_items: "{{ celery_extra_packages }}"
   when:
     - airflow_executor == "CeleryExecutor" and celery_extra_packages
@@ -118,7 +114,6 @@
     state: present
     virtualenv: "{{ airflow_app_home }}"
     virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-    # virtualenv_python: "python3.10"
     extra_args: --no-cache-dir
   register: airflow_install
   environment:
@@ -132,7 +127,6 @@
     version: "{{ airflow_version }}"
     virtualenv: "{{ airflow_app_home }}"
     virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-    # virtualenv_python: "python3.10"
   when:
     - airflow_extra_packages is defined
     - not airflow_bundle_package
@@ -146,7 +140,6 @@
     version: "{{ item.version | default(omit) }}"
     virtualenv: "{{ airflow_app_home }}"
     virtualenv_python: "python{{ airflow_python_version | default(omit) }}"
-    # virtualenv_python: "python3.10"
     extra_args: "{{ item.extra_args | default(omit) }}"
   with_items: "{{ dags_dependencies }}"
   when: dags_dependencies is defined
