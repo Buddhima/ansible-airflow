@@ -60,6 +60,8 @@ Based on the configurations here, the template file `airflow-role/templates/webs
 
 Configurations at here is for the webserver component of Airflow. So you will find configurations for webserver authentication there.
 
+## Result
+![image](https://user-images.githubusercontent.com/1543384/179495830-8e3addaf-4416-416e-9621-19f6efa38513.png)
 ## Limitations
 
 * Only tested with Ubuntu 22.04, in future need to tryout with other linux versions
