@@ -15,13 +15,14 @@ This implementation has been tested with the following specifications:
 * Instance Type: t2.micro (This is sufficient only for testing and verification of the installation)
 * Airflow version tested: 2.3.2
 * Python version: 3.10 (This is the default Python version comes with Ubuntu 22.04)
+* Ansible version: 2.10 (This should be 2.0 or higher)
 
 ## Installation Steps
 
 1. If you are using a cloud service provider (eg: AWS) create an VM instace according to your requriements
 2. Make sure your VM instance could receive HTTP traffic from port 8080 (eg: in AWS, configure Security Groups)
-3. Log in to the VM instance
-4. Clone this repository `https://github.com/Buddhima/ansible-airflow`
+3. Log in to the VM instance and switch to super-user
+4. Clone this repository `$ git clone https://github.com/Buddhima/ansible-airflow`
 5. Access the directory `$ cd ansible-airflow`
 6. Install Ansible `$ apt-get update && apt-get install ansible -y`
 7. Execute the Ansible playbook `$ ansible-playbook play.yml`
