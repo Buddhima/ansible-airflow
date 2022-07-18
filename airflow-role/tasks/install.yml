@@ -46,7 +46,7 @@
   with_items: "{{ airflow_environment_variables }}"
 
 - name: Airflow | Installing dependencies
-  apt:
+  ansible.builtin.package:
     pkg: "{{ airflow_required_libs }}"
     state: present
     update_cache: true
